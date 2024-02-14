@@ -4,7 +4,7 @@ import time
 # plt.ion()
 
 G = 6.67430e-9  # Gravitational Constant (Nm^2 / kg^2)
-delta_t = 1  # Change in time (s)
+dt = 1  # Change in time (s)
 
 gridArea = [0, 200, 0, 200]
 gridScale = 1000000
@@ -45,7 +45,7 @@ class Body:
         for body in Body._instances:
             if body == self:
                 continue
-            x_net = x_net + self.x_gravForce(body)
+            x_net = x_net - self.x_gravForce(body)
         print(f"{self.name} net_force: {x_net}")
         return x_net
 
@@ -54,26 +54,30 @@ class Body:
         for body in Body._instances:
             if body == self:
                 continue
-            y_net = y_net + self.y_gravForce(body)
+            y_net = y_net - self.y_gravForce(body)
         return y_net
 
     def updateVelocity(self):
-        self.x_vel = self.x_vel + ((self.x_netForce() / self.mass) * (delta_t))
-        self.y_vel = self.y_vel + ((self.y_netForce() / self.mass) * (delta_t))
+        dv_x = self.x_netForce() / self.mass * dt
+        dv_y = self.y_netForce() / self.mass * dt
+        self.x_vel = self.x_vel + dv_x
+        self.y_vel = self.y_vel + dv_y
+        print(f"{self.name} delta v: {dv_x}")
         print(f"{self.name} velocity: {self.x_vel}")
 
     def updatePosition(self):
-        self.updateVelocity()
-        self.x_pos += self.x_vel * delta_t
-        self.y_pos += self.y_vel * delta_t
+        self.x_pos += self.x_vel * dt
+        self.y_pos += self.y_vel * dt
 
 
-obj1 = Body(name="object_1", x_pos=50, y_pos=50, mass=5.972e24)
-obj2 = Body(name="object_2", x_pos=75, y_pos=50, mass=7.347e22)
+obj1 = Body(name="object_1", x_pos=0, y_pos=0, mass=5.972e24)
+obj2 = Body(name="object_2", x_pos=3.844e8, y_pos=0, mass=7.347e22)
 
 while (True):
     print(f"Object 1 - X:{obj1.x_pos}, Y:{obj1.y_pos}")
     print(f"Object 2 - X:{obj2.x_pos}, Y:{obj2.y_pos}")
+    obj1.updateVelocity()
+    obj2.updateVelocity()
     obj1.updatePosition()
     obj2.updatePosition()
     time.sleep(1)

@@ -21,6 +21,34 @@ class Solar_System:
     def add_planet(self, planet):
         self.planets.append(planet)
 
+        
+    # returns total momentum of the system
+    def calc_momentum(self):
+        p_x = 0
+        p_y = 0
+        for planet in self.planets:
+            p_x += planet.mass * planet.x_vel
+            p_y += planet.mass * planet.y_vel
+        return math.sqrt(p_x**2 + p_y**2)
+
+    # returns the total energy of the system
+    def calc_energy(self):
+        # Potential energy
+        U = 0
+        # Kinetic energy
+        K = 0
+        for p_1 in self.planets:
+            # Potential Energy
+            for p_2 in self.planets:
+                if (p_1 != p_2):
+                    r = math.sqrt((p_1.x_pos - p_2.x_pos)**2 + (p_1.y_pos - p_2.y_pos)**2)
+                    U += G * p_1.mass * p_2.mass / r
+
+            # Kinetic Energy
+            K += p_1.mass * (p_1.x_vel**2 + p_1.y_vel**2) / 2
+
+        return (U / 2) + K
+
     # updates the velocity and positions of all the planets within the solar system
     # returns nothing
     def update_system(self):
@@ -69,6 +97,8 @@ class Solar_System:
         planet.y_pos += planet.y_vel * dt
         # print(f"{planet.name} x: {planet.x_pos}")
         # print(f"{planet.name} y: {planet.y_pos}")
+
+    
 
 # class to define a singular planet
 class Planet:
@@ -158,6 +188,7 @@ def update(frame):
 
     # generate the new positions
     milky.update_system()
+    print(milky.calc_energy())
     
     # return all 'plots' instances
     return *plots,

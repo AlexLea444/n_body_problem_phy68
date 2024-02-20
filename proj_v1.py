@@ -104,15 +104,16 @@ class Solar_System:
 class Planet:
     # initiator
     # variable names pretty self explanatory
-    def __init__(self, name, x_pos, y_pos, x_vel, y_vel, mass, color):
+    def __init__(self, name, x_pos, y_pos, x_vel, y_vel, mass, radius, color):
         self.name = name
         self.x_pos = x_pos * AU
         self.y_pos = y_pos * AU
         self.mass = mass
         self.x_vel = x_vel
         self.y_vel = y_vel
+        self.radius = radius
         self.color = color
-        
+
     # calculates the gravitational force between itself and another singular planet
     # parameter: planet to calculate force with
     # returns: force value in the x axis
@@ -138,20 +139,30 @@ class Planet:
 ############################### SOLAR SYSTEM INIT #################################
 
 
-
 milky = Solar_System()
 
-sun   = Planet(name="Sun",     x_pos=0, y_pos=0,   x_vel=0,     y_vel=0, mass=1.989e30, color='yellow')
-# TODO: add eccentricity
-mercury = Planet(name="Mercury", x_pos=0, y_pos=.4,  x_vel=47000, y_vel=0, mass=7.278e23, color='gray')
-venus   = Planet(name="Venus",   x_pos=0, y_pos=.72, x_vel=34900, y_vel=0, mass=1.073e25, color='orange')
-earth   = Planet(name="Earth",   x_pos=0, y_pos=1,   x_vel=30000, y_vel=0, mass=5.972e24, color='blue')
-mars    = Planet(name="Mars",    x_pos=0, y_pos=1.5, x_vel=23817, y_vel=0, mass=5.415e24, color='red')
-jupiter = Planet(name="Jupiter", x_pos=0, y_pos=5.2, x_vel=13090, y_vel=0, mass=4.180e27, color='tan')
-# TODO: add other planets
+sun = Planet(name="Sun",x_pos=0,y_pos=0,x_vel=0,y_vel=0,
+             mass=1.989e30,radius=4.0,color="yellow")
 
+# TODO: add eccentricity
+mercury = Planet(name="Mercury",x_pos=0,y_pos=.4,x_vel=47000,y_vel=0,
+                 mass=7.278e23,radius=0.38,color="gray")
+venus = Planet(name="Venus",x_pos=0,y_pos=.72,x_vel=34900,y_vel=0,
+               mass=1.073e25,radius=0.95,color="orange")
+earth = Planet(name="Earth",x_pos=0,y_pos=1,x_vel=30000,y_vel=0,
+               mass=5.972e24,radius=1.0,color="blue")
+mars = Planet(name="Mars",x_pos=0,y_pos=1.5,x_vel=23817,y_vel=0,
+              mass=5.415e24,radius=0.53,color="red")
+jupiter = Planet(name="Jupiter",x_pos=0,y_pos=5.2,x_vel=13090,y_vel=0,
+                 mass=4.180e27,radius=11.2,color="tan")
+saturn = Planet(name="Saturn",x_pos=0,y_pos=9.58,x_vel=9690,y_vel=0,
+                mass=5.683e26,radius=9.5,color="gold")
+uranus = Planet(name="Uranus",x_pos=0,y_pos=19.22,x_vel=6810,y_vel=0,
+                mass=8.681e25,radius=4.0,color="lightblue")
+neptune = Planet(name="Neptune",x_pos=0,y_pos=30.05,x_vel=5430,y_vel=0,
+                 mass=1.024e26,radius=3.9,color="darkblue")
 # works but is indistinguishable from Earth due to how close it is
-moon    = Planet(name="Moon",    x_pos=0, y_pos=1.0025695,   x_vel=31022, y_vel=0, mass=1.619e23, color='white')
+# moon    = Planet(name="Moon",x_pos=0, y_pos=1.0025695,   x_vel=31022, y_vel=0, mass=1.619e23, color='white')
 
 
 milky.add_planet(sun)
@@ -177,7 +188,7 @@ ax.set_ylim(-1.5*10**12, 1.5*10**12)
 # Initialize plot elements
 plots = []
 for planet in milky.planets:
-    plot, = ax.plot([], [], 'o', color=planet.color) 
+    plot, = ax.plot([], [], 'o', color=planet.color, markersize=planet.radius) 
     plots.append(plot)
 
 # Function to update the plot elements

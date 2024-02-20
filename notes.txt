@@ -1,0 +1,6 @@
+TODO:
+
+ - Automatic Differentiation or Symbolic Gradient
+ - Scipy integration tool for Force -> Velocity -> Position
+ - Measure the total energy, momentum of the system
+ - Create larger systems

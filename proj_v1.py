@@ -4,9 +4,9 @@
 # TODO: add gradient
 #       change units
 #       add derivitive thingy:
-#           still think it's not good practice to add unnecessary libraries and there aren't
-#           many good ways to write clean, modular code only calculating it once. Attached
-#           it below if you wanna find a way to add it
+#           still think it's not good practice to add unnecessary libraries. Attached
+#           it below if you wanna find a way to add it, just make sure to only call
+#           the sym.diff once
 #       fix force value bug on eps calc_force: weird bug, noted below
 
 

@@ -1,14 +1,13 @@
 # solar_system.py
 # Creates a simulation and animation of our solar system
 
-
 # TODO: add gradient
 #       change units
 #       add derivitive thingy:
 #           still think it's not good practice to add unnecessary libraries and there aren't
 #           many good ways to write clean, modular code only calculating it once. Attached
 #           it below if you wanna find a way to add it
-#       fix force value on eps update_system: weird bug see below
+#       fix force value bug on eps calc_force: weird bug, noted below
 
 
 # # derivitive thingy:
@@ -23,7 +22,8 @@
 
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-import numpy as np
+import autograd.numpy as np
+from autograd import grad
 import math
 
 # Change the following two constants to define what specifically you want to plot
@@ -47,10 +47,118 @@ G = 6.67430e-11  # Gravitational Constant (Nm^2 / kg^2)
 dt = 1000000  # Change in time (s)
 AU = 1.495979e11 # Astronomical Unit in terms of Meters
 EPSILON = 1e-4 * AU  # Small perturbation for gradient calculation
-PLOT_STEPS = 100 # steps to plot (unused if ANIMATION is selected)
+PLOT_STEPS = 1000# steps to plot (unused if ANIMATION is selected)
 
 
 ############################### CLASS DEFINITIONS #################################
+
+# Class Definitions:
+#   Gradient_Solar_System: Gradient Calculation based system
+#   Epsilon_Solar_System: Epsilon Calculation based system
+#   Euler_Solar_System: Euler calculation based system
+#   Planet: class to define an individual planet within systems
+
+# Simulation Functions based on a Gradient Calculation
+class Gradient_Solar_System:
+    # initiator
+    # creates an empty array of all planets
+    def __init__(self):
+        self.planets = []
+        # used to help calculate gradient
+        self.curr_planet_1 = 0
+        self.curr_planet_2 = 0
+    
+    # adds a planet to the system
+    def add_planet(self, planet):
+        self.planets.append(planet)
+
+    # updates the velocity and positions of all the planets within the solar system
+    # returns nothing
+    def update_system(self):
+        net_potential_grad = 0
+        for i, planet in enumerate(self.planets):
+            total_potential_grad = np.array([0.0, 0.0])
+            for j, other in enumerate(self.planets):
+                if i != j:
+                    grad_potential = self.gradient_potential(planet, other)
+                    total_potential_grad += grad_potential
+            acceleration = -total_potential_grad / planet.mass
+            planet.x_vel += acceleration[0] * dt
+            planet.y_vel += acceleration[1] * dt
+            planet.x_pos += planet.x_vel * dt
+            planet.y_pos += planet.y_vel * dt
+            net_potential_grad += total_potential_grad
+
+    # Calculates the gradient potential of a planet
+    def gradient_potential(self, planet, other):
+        self.curr_planet_1 = planet
+        self.curr_planet_2 = other
+        # Compute gradients with respect to x and y
+        grad_potential_x = grad(self.potential_func, 0)
+        grad_potential_y = grad(self.potential_func, 1)
+        # Evaluate the gradients at the current position
+        grad_x = grad_potential_x(planet.x_pos, planet.y_pos)
+        grad_y = grad_potential_y(planet.x_pos, planet.y_pos)
+
+        return np.array([grad_x, grad_y])
+
+    # Define the potential function with respect to x and y
+    # Helper function to gradient_potential
+    # TODO: does not work as x and y are of type defined by grad package
+    def potential_func(self, x, y):
+        dx = self.curr_planet_2.x_pos - x
+        dy = self.curr_planet_2.y_pos - y
+        r = np.sqrt(dx**2 + dy**2)
+        if r == 0:
+            return 0
+        return -G * self.curr_planet_1.mass * self.curr_planet_2.mass / r
+
+    # returns total momentum of the system
+    def calc_momentum(self):
+        p_x = 0
+        p_y = 0
+        for planet in self.planets:
+            p_x += planet.mass * planet.x_vel
+            p_y += planet.mass * planet.y_vel
+        return math.sqrt(p_x**2 + p_y**2)
+
+    # returns the total energy of the system
+    def calc_energy(self):
+        # Potential energy
+        U = 0
+        # Kinetic energy
+        K = 0
+        for p_1 in self.planets:
+            # Potential Energy
+            for p_2 in self.planets:
+                if (p_1 != p_2):
+                    r = math.sqrt((p_1.x_pos - p_2.x_pos)**2 + (p_1.y_pos - p_2.y_pos)**2)
+                    U += G * p_1.mass * p_2.mass / r
+            # Kinetic Energy
+            K += p_1.mass * (p_1.x_vel**2 + p_1.y_vel**2) / 2
+        return (U / 2) + K
+        
+    # returns the total force within a system
+    # TODO: fix as currently bugged but have jank fix to it
+    def calc_force(self):
+        #calculate the x and y gradients twice for each set of planets
+        net_potential_grad = 0
+        for i, planet in enumerate(self.planets):
+            total_potential_grad = np.array([0.0, 0.0])
+            for j, other in enumerate(self.planets):
+                if i != j:
+                    grad_potential = self.gradient_potential(planet, other)
+                    total_potential_grad += grad_potential
+            acceleration = -total_potential_grad / planet.mass
+            # Note: The following code updates the system and should not be in here
+            #       However, this function does not return the correct value without it
+            planet.x_vel += acceleration[0] * dt
+            planet.y_vel += acceleration[1] * dt
+            planet.x_pos += planet.x_vel * dt
+            planet.y_pos += planet.y_vel * dt
+            net_potential_grad += total_potential_grad
+        # return the total force magnitude within system
+        return math.sqrt(net_potential_grad[0]**2 + net_potential_grad[1]**2) / 2
 
 
 # Simulation Functions based on an Epsilon Approximation
@@ -102,6 +210,7 @@ class Epsilon_Solar_System:
 
         return np.array([grad_x, grad_y])
 
+    # Calculates the gravitational potential at a given point
     def grav_potential_at_point(self, planet, other, x, y):
         dx = other.x_pos - x
         dy = other.y_pos - y
@@ -137,8 +246,7 @@ class Epsilon_Solar_System:
         return (U / 2) + K
 
     # returns the total force within a system
-    # TODO: idk why it is doing this bs. Uncomment the commented code and run that instead of update_value:
-    #       it's a totally different value
+    # TODO: fix as currently bugged but have jank fix to it
     def calc_force(self):
         net_potential_grad = 0
         # Calculate the gravitatational forces for each set of planets twice
@@ -149,13 +257,14 @@ class Epsilon_Solar_System:
                     grad_potential = self.gradient_potential(planet, other)
                     total_potential_grad += grad_potential
             #add to the running sum of potentials
-            # weird commented code
             net_potential_grad += total_potential_grad
-            # acceleration = -total_potential_grad / planet.mass
-            # planet.x_vel += acceleration[0] * dt
-            # planet.y_vel += acceleration[1] * dt
-            # planet.x_pos += planet.x_vel * dt
-            # planet.y_pos += planet.y_vel * dt
+            # Note: The following code updates the system and should not be in here
+            #       However, this function does not return the correct value without it
+            acceleration = -total_potential_grad / planet.mass
+            planet.x_vel += acceleration[0] * dt
+            planet.y_vel += acceleration[1] * dt
+            planet.x_pos += planet.x_vel * dt
+            planet.y_pos += planet.y_vel * dt
         #return the sum of x and y forces
         return (math.sqrt(net_potential_grad[0]**2 + net_potential_grad[1]**2)) / 2
 
@@ -385,8 +494,8 @@ def plot_energy(solar_sys, steps):
         solar_sys.update_system()
     # Plot Energy Calculations
     plt.plot(arr)
-    plt.title(f'Euler Version | dt = {dt} | {steps} Steps', size=10)
-    plt.xlabel('Steps (Seconds)')
+    plt.title(f'{METHOD} Version | dt = {dt} | {steps} Steps', size=10)
+    plt.xlabel('Steps ({steps} Seconds)')
     plt.ylabel('Energy (J)')
     plt.ylim(1.17e36, 1.24e36)
     plt.suptitle('Energy Values over Time of Solar System')
@@ -405,8 +514,8 @@ def plot_momentum(solar_sys, steps):
         solar_sys.update_system()
     # Plot momentum Calculations
     plt.plot(arr)
-    plt.title(f'Euler Version | dt = {dt} | {steps} Steps', size=10)
-    plt.xlabel('Steps (Seconds)')
+    plt.title(f'{METHOD} Version | dt = {dt} | {steps} Steps', size=10)
+    plt.xlabel('Steps ({steps} Seconds)')
     plt.ylabel('Momentum (J*s)')
     plt.ylim(6.208e31, 6.208e31)
     plt.suptitle('Momentum Values over Time of Solar System')
@@ -421,11 +530,12 @@ def plot_force(solar_sys, steps):
     # Obtain Force Calculations
     for i in range(0, steps):
         arr.append(solar_sys.calc_force())
-        solar_sys.update_system()
+        if (METHOD == "EULER"): # jank fix to current bug in Epsilon/grad force functions
+            solar_sys.update_system()
     # Plot Force Calculations
-    plt.title(f'Euler Version | dt = {dt} | {steps} Steps', size=10)
     plt.plot(arr)
-    plt.xlabel('Steps (Seconds)')
+    plt.title(f'{METHOD} Version | dt = {dt} | {steps} Steps', size=10)
+    plt.xlabel('Steps ({steps} Seconds)')
     plt.ylabel('Force (N)')
     plt.suptitle('Force Values over Time of Solar System')
     plt.grid(True)
